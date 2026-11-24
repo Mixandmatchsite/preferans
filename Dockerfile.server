@@ -3,6 +3,7 @@ FROM swift:6.3.2-jammy AS builder
 WORKDIR /workspace
 COPY Package.swift Package.resolved ./
 COPY Sources ./Sources
+COPY Vendor/card-game-core/Sources/CardGameCore ./Vendor/card-game-core/Sources/CardGameCore
 
 RUN PREFERANS_SERVER_ONLY=1 swift build -c release --product PreferansServer
 

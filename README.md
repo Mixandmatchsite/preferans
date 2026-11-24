@@ -60,3 +60,8 @@ the Preferans room service for online sync:
 
 Before public release, test online rooms on at least two real devices under
 separate accounts.
+
+## Shared card library
+
+After cloning or updating this game, run `git submodule update --init Vendor/card-game-core` with read access to `mixandmatchorg/card-game-core`.
+CI reads the pinned revision with the read-only `CARD_GAME_CORE_READ_TOKEN` repository or organization secret.

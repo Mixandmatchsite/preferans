@@ -21,6 +21,16 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Read the pinned shared library revision
+        id: shared-core
+        run: echo "revision=$(git rev-parse HEAD:Vendor/card-game-core)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: mixandmatchorg/card-game-core
+          ref: ${{ steps.shared-core.outputs.revision }}
+          path: Vendor/card-game-core
+          token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'

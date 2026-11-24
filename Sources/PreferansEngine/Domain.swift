@@ -1,4 +1,7 @@
+import CardGameCore
 import Foundation
+
+public typealias SharedRoomRetryBackoff = CardGameCore.RoomRetryBackoff
 
 public struct PlayerID: Hashable, Codable, Sendable, ExpressibleByStringLiteral, CustomStringConvertible {
     public let rawValue: String
@@ -145,9 +148,7 @@ public struct Card: Hashable, Codable, Sendable, Comparable, CustomStringConvert
 }
 
 public enum Deck {
-    public static let standard32: [Card] = Suit.allCases.flatMap { suit in
-        Rank.allCases.map { Card(suit, $0) }
-    }.sorted()
+    public static let standard32: [Card] = makeDeck(suits: Suit.allCases, ranks: Rank.allCases, card: Card.init).sorted()
 }
 
 public enum Strain: Hashable, Codable, Sendable, Comparable, CustomStringConvertible {

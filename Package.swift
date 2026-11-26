@@ -19,7 +19,7 @@ if isServerLane {
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.22.0")
     ]
     targets = [
-        .target(name: "PreferansEngine"),
+        .target(name: "PreferansEngine", dependencies: ["CardGameCore"]),
         .target(name: "PreferansServerCore", dependencies: ["PreferansEngine"]),
         .executableTarget(
             name: "PreferansServer",
@@ -35,7 +35,7 @@ if isServerLane {
     ]
     dependencies = []
     targets = [
-        .target(name: "PreferansEngine"),
+        .target(name: "PreferansEngine", dependencies: ["CardGameCore"]),
         .target(
             name: "PreferansEngineTestSupport",
             dependencies: ["PreferansEngine"],
@@ -60,7 +60,7 @@ if isServerLane {
         .package(url: "https://github.com/hummingbird-project/hummingbird.git", from: "2.22.0")
     ]
     targets = [
-        .target(name: "PreferansEngine"),
+        .target(name: "PreferansEngine", dependencies: ["CardGameCore"]),
         .target(
             name: "PreferansEngineTestSupport",
             dependencies: ["PreferansEngine"],
@@ -136,5 +136,8 @@ let package = Package(
     ],
     products: products,
     dependencies: dependencies,
-    targets: targets
+    targets: targets + [.target(
+        name: "CardGameCore", path: "Vendor/card-game-core/Sources/CardGameCore",
+        exclude: ["AppData.swift", "OnlineTrial.swift", "Resources", "SharedGameStrings.swift", "SplitMix64.swift"]
+    )]
 )

@@ -7,6 +7,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Read the pinned shared library revision
+        id: shared-core
+        run: |
+          revision=$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse HEAD:Vendor/card-game-core)
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: mixandmatchorg/card-game-core
+          ref: ${{ steps.shared-core.outputs.revision }}
+          path: Vendor/card-game-core
+          token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -20,4 +32,16 @@ jobs:
     container: swift:6.3.2-jammy
     steps:
       - uses: actions/checkout@v4
+      - name: Read the pinned shared library revision
+        id: shared-core
+        run: |
+          revision=$(git -c safe.directory="$GITHUB_WORKSPACE" rev-parse HEAD:Vendor/card-game-core)
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: mixandmatchorg/card-game-core
+          ref: ${{ steps.shared-core.outputs.revision }}
+          path: Vendor/card-game-core
+          token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
+          persist-credentials: false
       - run: PREFERANS_ENGINE_TESTS_ONLY=1 swift test

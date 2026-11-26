@@ -1,0 +1,3 @@
+[submodule "Vendor/card-game-core"]
+	path = Vendor/card-game-core
+	url = https://github.com/mixandmatchorg/card-game-core.git

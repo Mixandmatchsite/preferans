@@ -61,6 +61,13 @@ jobs:
           path: Vendor/card-game-core
           token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
           persist-credentials: false
+      - name: Resolve packages with the CodeQL toolchain
+        # The release lockfiles come from Xcode 27; Swift 6.3 can resolve a different package identity.
+        run: |
+          xcodebuild -version
+          swift --version
+          xcodebuild -resolvePackageDependencies -project Preferans.xcodeproj -scheme Preferans
+          swift package resolve
       - uses: github/codeql-action/init@v4
         with:
           languages: swift
@@ -69,7 +76,7 @@ jobs:
         run: |
           xcodebuild -project Preferans.xcodeproj -scheme Preferans \
             -configuration Debug -destination 'generic/platform=iOS Simulator' \
-            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO -quiet build
+            -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO build
       - name: Build the Swift server
         run: swift build --target PreferansServer --force-resolved-versions
       - uses: github/codeql-action/analyze@v4

@@ -36,16 +36,12 @@ jobs:
         with:
           category: /language:${{ matrix.language }}
 
-  swift:
-    name: Analyze (swift)
+  ios-build:
+    name: Build iOS app
     # Fork PRs do not receive the read-only credential for the private submodule.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    # Compiled CodeQL analysis on Apple Silicon requires Rosetta.
-    runs-on: macos-26-intel
+    runs-on: macos-26
     timeout-minutes: 25
-    permissions:
-      contents: read
-      security-events: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -62,31 +58,67 @@ jobs:
           path: Vendor/card-game-core
           token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
           persist-credentials: false
-      - name: Resolve packages with the CodeQL toolchain
+      - name: Resolve Xcode packages
         # The release lockfiles come from Xcode 27; Swift 6.3 can resolve a different package identity.
         run: |
-          xcodebuild -version
-          swift --version
           xcodebuild -resolvePackageDependencies -project Preferans.xcodeproj -scheme Preferans
-          swift package resolve
       - name: Build the full iOS app
         run: |
           xcodebuild -project Preferans.xcodeproj -scheme Preferans \
             -configuration Debug -destination 'generic/platform=iOS Simulator' \
             -disableAutomaticPackageResolution CODE_SIGNING_ALLOWED=NO build
+
+  swift:
+    name: Analyze (swift, ${{ matrix.component }})
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Compiled CodeQL analysis on Apple Silicon requires Rosetta.
+    runs-on: macos-26-intel
+    # Instrumented Swift compilation was still making progress when the old
+    # 25-minute job (which also ran the ordinary Xcode build) was cancelled.
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [ios, server]
+    env:
+      PREFERANS_SERVER_ONLY: ${{ matrix.component == 'server' && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Read the pinned shared library revision
+        id: shared-core
+        run: |
+          revision=$(git rev-parse HEAD:Vendor/card-game-core)
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v6
+        with:
+          repository: mixandmatchorg/card-game-core
+          ref: ${{ steps.shared-core.outputs.revision }}
+          path: Vendor/card-game-core
+          token: ${{ secrets.CARD_GAME_CORE_READ_TOKEN }}
+          persist-credentials: false
+      - name: Resolve SwiftPM packages for the runner toolchain
+        run: |
+          swift --version
+          swift package resolve
       - uses: github/codeql-action/init@v4
         with:
           languages: swift
           build-mode: manual
       - name: Compile the iOS module for CodeQL
-        # Xcode's package graph can stall under tracing; trace SwiftPM's compiler instead.
+        if: matrix.component == 'ios'
         run: |
           sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
           triple="$(uname -m)-apple-ios17.0-simulator"
           swift build --target PreferansApp --triple "$triple" --sdk "$sdk" \
             -Xswiftc -target -Xswiftc "$triple" --build-system native --force-resolved-versions
       - name: Compile the Swift server for CodeQL
+        if: matrix.component == 'server'
         run: swift build --target PreferansServer --build-system native --force-resolved-versions
       - uses: github/codeql-action/analyze@v4
         with:
-          category: /language:swift
+          category: /language:swift/component:${{ matrix.component }}

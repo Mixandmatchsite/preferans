@@ -40,7 +40,8 @@ jobs:
     name: Analyze (swift)
     # Fork PRs do not receive the read-only credential for the private submodule.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: macos-26
+    # Compiled CodeQL analysis on Apple Silicon requires Rosetta.
+    runs-on: macos-26-intel
     timeout-minutes: 25
     permissions:
       contents: read
@@ -81,7 +82,7 @@ jobs:
         # Xcode's package graph can stall under tracing; trace SwiftPM's compiler instead.
         run: |
           sdk=$(xcrun --sdk iphonesimulator --show-sdk-path)
-          triple=arm64-apple-ios17.0-simulator
+          triple="$(uname -m)-apple-ios17.0-simulator"
           swift build --target PreferansApp --triple "$triple" --sdk "$sdk" \
             -Xswiftc -target -Xswiftc "$triple" --build-system native --force-resolved-versions
       - name: Compile the Swift server for CodeQL
